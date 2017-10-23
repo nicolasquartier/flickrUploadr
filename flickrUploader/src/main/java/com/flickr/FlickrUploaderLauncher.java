@@ -1,3 +1,5 @@
+package com.flickr;
+
 import com.flickr4java.flickr.FlickrException;
 
 import java.io.IOException;

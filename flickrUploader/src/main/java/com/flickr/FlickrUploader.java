@@ -5,28 +5,16 @@ import com.flickr4java.flickr.FlickrException;
 import com.flickr4java.flickr.REST;
 import com.flickr4java.flickr.RequestContext;
 import com.flickr4java.flickr.auth.Auth;
-import com.flickr4java.flickr.auth.AuthInterface;
-import com.flickr4java.flickr.auth.Permission;
 import com.flickr4java.flickr.collections.Collection;
 import com.flickr4java.flickr.collections.CollectionsInterface;
-import com.flickr4java.flickr.photos.Photo;
-import com.flickr4java.flickr.photos.PhotoList;
-import com.flickr4java.flickr.photos.PhotoSet;
-import com.flickr4java.flickr.photos.PhotosInterface;
-import com.flickr4java.flickr.photosets.PhotosetsInterface;
-import com.flickr4java.flickr.uploader.UploadMetaData;
-import com.flickr4java.flickr.uploader.Uploader;
 import com.flickr4java.flickr.util.AuthStore;
 import com.flickr4java.flickr.util.FileAuthStore;
-import org.scribe.model.Token;
-import org.scribe.model.Verifier;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
-import java.util.Scanner;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -42,6 +30,7 @@ public class FlickrUploader {
     private File parentFolder;
     private AuthStore authStore;
     private CollectionsInterface collectionsInterface;
+    private String nsid;
 
 
     void launch() throws InterruptedException, ExecutionException, IOException, FlickrException {
@@ -57,36 +46,36 @@ public class FlickrUploader {
 
         List<File> collectionsToUpload = getCollectionsToUpload();
 
-        uploadColections(flickr, collectionsToUpload);
+//        uploadColections(flickr, collectionsToUpload);
     }
 
-    private void uploadColections(Flickr flickr, List<File> collectionsToUpload) {
-        PhotoSet photoSet = new PhotoSet();
-        PhotoList photoList = new PhotoList();
-
-
-        PhotosetsInterface pi = flickr.getPhotosetsInterface();
-        Photo photo = new Photo();
-        photo.setTitle();
-        photo.setPhotoUrl();
-        pi.create();
-        pi.addPhoto();
-
-        Uploader uploader = flickr.getUploader();
-        for (File collectionToUpload : collectionsToUpload) {
-            Collection collection = new Collection();
-            for (File fileToUpload : collectionsToUpload) {
-                if(fileToUpload.isFile()) {
-                    UploadMetaData metaData = new UploadMetaData();
-                    metaData.setPublicFlag(false);
-                    uploader.upload(fileToUpload, )
-                } else {
-                    System.out.println(fileToUpload.getAbsolutePath() + " is a directory.");
-                }
-            }
-        }
-        uploader.upload()
-    }
+//    private void uploadColections(Flickr flickr, List<File> collectionsToUpload) {
+//        PhotoSet photoSet = new PhotoSet();
+//        PhotoList photoList = new PhotoList();
+//
+//
+//        PhotosetsInterface pi = flickr.getPhotosetsInterface();
+//        Photo photo = new Photo();
+//        photo.setTitle();
+//        photo.setPhotoUrl();
+//        pi.create();
+//        pi.addPhoto();
+//
+//        Uploader uploader = flickr.getUploader();
+//        for (File collectionToUpload : collectionsToUpload) {
+//            Collection collection = new Collection();
+//            for (File fileToUpload : collectionsToUpload) {
+//                if(fileToUpload.isFile()) {
+//                    UploadMetaData metaData = new UploadMetaData();
+//                    metaData.setPublicFlag(false);
+//                    uploader.upload(fileToUpload, )
+//                } else {
+//                    System.out.println(fileToUpload.getAbsolutePath() + " is a directory.");
+//                }
+//            }
+//        }
+//        uploader.upload()
+//    }
 
     private CollectionsInterface setCollectionsInterface(Flickr flickr) {
         this.collectionsInterface = flickr.getCollectionsInterface();
@@ -143,40 +132,46 @@ public class FlickrUploader {
         this.apiKey = properties.getProperty("api.key");
         this.sharedSecret = properties.getProperty("secret");
         this.parentFolder = new File(properties.getProperty("parent.folder"));
+        this.nsid = properties.getProperty("nsid");
     }
 
     private AuthStore loadAuthStore(Flickr flickr, File parentFolder) throws IOException {
         this.authStore = setAuthStore(parentFolder.getAbsolutePath());
-
-        AuthInterface authInterface = flickr.getAuthInterface();
-        Token accessToken = authInterface.getRequestToken();
-
-        // Try with DELETE permission. At least need write permission for upload and add-to-set.
-        String url = authInterface.getAuthorizationUrl(accessToken, Permission.DELETE);
-        System.out.println("Follow this URL to authorise yourself on Flickr");
-        System.out.println(url);
-        System.out.println("Paste in the token it gives you:");
-        System.out.print(">>");
-
-        Scanner scanner = new Scanner(System.in);
-        String tokenKey = scanner.nextLine();
-
-        Token requestToken = authInterface.getAccessToken(accessToken, new Verifier(tokenKey));
-
-        Auth auth = null;
-        try {
-            auth = authInterface.checkToken(requestToken);
-        } catch (FlickrException e) {
-            e.printStackTrace();
-        }
+        Auth auth = this.authStore.retrieve(this.nsid);
         RequestContext.getRequestContext().setAuth(auth);
         this.authStore.store(auth);
-        scanner.close();
-        System.out.println("Thanks.  You probably will not have to do this every time. Auth saved for user: " + auth.getUser().getUsername() + " nsid is: "
-                + auth.getUser().getId());
-        System.out.println(" AuthToken: " + auth.getToken() + " tokenSecret: " + auth.getTokenSecret());
 
         return this.authStore;
+
+//        AuthInterface authInterface = flickr.getAuthInterface();
+//        Token accessToken = authInterface.getRequestToken();
+//
+//        // Try with DELETE permission. At least need write permission for upload and add-to-set.
+//        String url = authInterface.getAuthorizationUrl(accessToken, Permission.DELETE);
+//        System.out.println("Follow this URL to authorise yourself on Flickr");
+//        System.out.println(url);
+//        System.out.println("Paste in the token it gives you:");
+//        System.out.print(">>");
+//
+//        Scanner scanner = new Scanner(System.in);
+//        String tokenKey = scanner.nextLine();
+//
+//        Token requestToken = authInterface.getAccessToken(accessToken, new Verifier(tokenKey));
+//
+//        Auth auth = null;
+//        try {
+//            auth = authInterface.checkToken(requestToken);
+//        } catch (FlickrException e) {
+//            e.printStackTrace();
+//        }
+//        RequestContext.getRequestContext().setAuth(auth);
+//        this.authStore.store(auth);
+//        scanner.close();
+//        System.out.println("Thanks.  You probably will not have to do this every time. Auth saved for user: " + auth.getUser().getUsername() + " nsid is: "
+//                + auth.getUser().getId());
+//        System.out.println(" AuthToken: " + auth.getToken() + " tokenSecret: " + auth.getTokenSecret());
+//
+//        return this.authStore;
     }
 
     private AuthStore setAuthStore(String parentFolder) {

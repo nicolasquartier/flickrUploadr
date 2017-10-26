@@ -1,6 +1,7 @@
 **/target/
 .idea/
 **/*.iml
+**/resource/config.properties
 
 # Compiled class file
 *.class
